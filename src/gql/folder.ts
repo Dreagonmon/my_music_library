@@ -1,7 +1,10 @@
 import { extname as path_extname } from "@std/path";
 import { convertToRealPath, getSafePathParts, joinVirtualPath } from "../utils/path_convert.ts";
-import { MediaFile, MEDIA_EXT } from "./media_file.ts";
+import { MEDIA_EXT, MediaFile, MediaTypeEnum } from "./media_file.ts";
 
+interface FolderMediaArguement {
+    mediaType?: MediaTypeEnum;
+}
 export class Folder {
     name: string;
     path: string;
@@ -28,7 +31,10 @@ export class Folder {
         return dirs;
     }
 
-    async media() {
+    async media(args: FolderMediaArguement) {
+        if (typeof args.mediaType !== "string") {
+            args.mediaType = "ANY";
+        }
         const files = [] as Array<MediaFile>;
         const pathParts = getSafePathParts(this.path);
         try {
@@ -37,7 +43,10 @@ export class Folder {
                 const ext = path_extname(item.name).toLocaleLowerCase();
                 if (item.isFile && MEDIA_EXT.includes(ext)) {
                     const virtualPath = joinVirtualPath(...pathParts, item.name);
-                    files.push(new MediaFile(virtualPath));
+                    const mediaFile = new MediaFile(virtualPath);
+                    if (args.mediaType === "ANY" || args.mediaType === mediaFile.mediaType()) {
+                        files.push(mediaFile);
+                    }
                 }
             }
         } catch {

@@ -1,6 +1,7 @@
 import { extname as path_extname } from "@std/path";
 import { encodeBase64 } from "@std/encoding/base64";
-import { convertToRealPath, getSafePathParts } from "../utils/path_convert.ts";
+import { convertToRealPath, getSafePathParts, joinVirtualPath } from "../utils/path_convert.ts";
+import { getFolder } from "./folder.ts";
 
 export const MEDIA_AUDIO_EXT = [
     // audio
@@ -31,7 +32,7 @@ export const MEDIA_VIDEO_EXT = [
     ".3gp",
 ];
 export const MEDIA_EXT = [...MEDIA_AUDIO_EXT, ...MEDIA_IMAGE_EXT, ...MEDIA_VIDEO_EXT];
-export type MediaTypeEnum = "OTHER" | "AUDIO" | "IMAGE" | "VIDEO";
+export type MediaTypeEnum = "OTHER" | "AUDIO" | "IMAGE" | "VIDEO" | "ANY";
 interface MediaFileContentArguement {
     offset?: number;
     length?: number;
@@ -44,7 +45,7 @@ export class MediaFile {
     constructor(pathString: string) {
         const pathParts = getSafePathParts(pathString);
         const basename = pathParts.at(-1) ? pathParts.at(-1)! : "";
-        this.path = pathParts.join("/");
+        this.path = joinVirtualPath(...pathParts);
         this.ext = path_extname(this.path).toLocaleLowerCase();
         this.name = basename.substring(0, basename.length - this.ext.length);
     }
@@ -101,6 +102,12 @@ export class MediaFile {
             }
         }
         return undefined;
+    }
+    async folder() {
+        const pathParts = getSafePathParts(this.path);
+        pathParts.splice(pathParts.length - 1, 1); // delete last part
+        const dirPath = joinVirtualPath(...pathParts);
+        return await getFolder({ path: dirPath });
     }
 }
 

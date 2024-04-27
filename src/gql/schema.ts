@@ -9,6 +9,7 @@ schema {
 }
 
 type Query {
+    ping: String
     getFolder(path: String = ""): FolderType
     getMediaFile(path: String!): MediaFileType
 }
@@ -18,6 +19,7 @@ enum MediaTypeEnum {
   AUDIO
   IMAGE
   VIDEO
+  ANY
 }
 
 type MediaFileType {
@@ -27,13 +29,20 @@ type MediaFileType {
     size: Int
     mediaType: MediaTypeEnum
     contentBase64(offset: Int = 0, length: Int = 4096): String
+    folder: FolderType
 }
 
 type FolderType {
     name: String
     path: String
-    media: [MediaFileType]
+    media(mediaType: MediaTypeEnum = ""): [MediaFileType]
     folder: [FolderType]
+}
+
+type PlayList {
+    name: String
+    config: String
+    media: [MediaFileType]
 }
 `,
     {
@@ -42,6 +51,7 @@ type FolderType {
 );
 
 export const root = {
+    ping: "pong",
     getFolder,
     getMediaFile,
 };

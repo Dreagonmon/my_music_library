@@ -10,23 +10,24 @@ const __main__ = async () => {
 
     const response = await graphql({
         schema,
-        source: `
-        query {
-            getFolder(path: "Albums/Splitting the Arrow") {
-                name
-                path
-                media {
-                    name
-                    size
-                    mediaType
-                }
-            }
+        source: /* GraphQL */ `
+        query ($mediaTypeFilter: MediaTypeEnum) {
             getMediaFile(path: "Albums/Splitting the Arrow/Adriel Fair - Lord of Dance.ogg") {
                 name
-                contentBase64(offset: 24, length: 24)
+                folder {
+                    path
+                    media(mediaType: $mediaTypeFilter) {
+                        name
+                        size
+                        mediaType
+                    }
+                }
             }
         }
         `,
+        variableValues: {
+            "mediaTypeFilter": "ANY",
+        },
         rootValue: root,
     });
     console.log(response.data);
