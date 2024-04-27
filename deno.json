@@ -1,0 +1,26 @@
+{
+    "tasks": {
+        "dev": "deno run --allow-env --allow-read --allow-write=data src/main.ts",
+        "build": "deno run --allow-run=deno --allow-env --allow-read=.,/usr/bin,/bin,$HOME/.deno/bin --allow-write=./build scripts/build.ts",
+        "build-aarch64": "deno run --allow-run=deno --allow-env --allow-read=.,/usr/bin,/bin,$HOME/.deno/bin --allow-write=./build scripts/build.ts aarch64-unknown-linux-gnu",
+        "build-windows": "deno run --allow-run=deno --allow-env --allow-read=.,/usr/bin,/bin,$HOME/.deno/bin --allow-write=./build scripts/build.ts x86_64-pc-windows-msvc",
+        "run": "deno task build && cd build && ./my_music_library",
+        "gql-schema": "deno run --deny-env=NODE_ENV scripts/gql_schema.ts",
+        "gql-dev": "deno run --allow-env --allow-read --allow-write=data scripts/gql_dev.ts"
+    },
+    "fmt": {
+        "useTabs": false,
+        "lineWidth": 120,
+        "indentWidth": 4,
+        "semiColons": true,
+        "singleQuote": false,
+        "proseWrap": "preserve",
+        "include": ["src/", "scripts/", "deno.json"],
+        "exclude": ["src/testdata/**/*.ts"]
+    },
+    "imports": {
+        "@std/encoding": "jsr:@std/encoding@^0.224.0",
+        "@std/path": "jsr:@std/path@^0.224.0",
+        "graphql": "npm:graphql@^16.8.1"
+    }
+}

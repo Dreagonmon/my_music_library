@@ -1,0 +1,7 @@
+{
+    "access_token": "password_token",
+    "library_path": "/home/user/Music",
+    "data_dir": "./data",
+    "host": "0.0.0.0",
+    "port": "8080"
+}
