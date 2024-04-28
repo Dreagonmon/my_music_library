@@ -5,14 +5,17 @@ import {
     load_config,
 } from "../src/global_cfg.ts";
 import * as path from "@std/path";
+import { copy } from "@std/fs";
 
 // x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu,
 // x86_64-pc-windows-msvc, x86_64-apple-darwin, aarch64-apple-darwin
 const DEFAULT_TARGET_PLATFORM = "x86_64-unknown-linux-gnu";
 const SRC_ENTRY = path.resolve(import.meta.dirname!, "..", "src", "main.ts");
 const BUILD_DIR = path.resolve(import.meta.dirname!, "..", "build");
+const STATIC_SOURCE_DIR = path.resolve(import.meta.dirname!, "..", "static");
 const BUILD_TARGET = path.join(BUILD_DIR, "my_music_library");
 const TARGET_DATA_DIR = path.join(BUILD_DIR, "data");
+const TARGET_STATIC_DIR = path.join(BUILD_DIR, "static");
 const TARGET_CONFIG_FILE = path.join(TARGET_DATA_DIR, DEFAULTL_CONFIG_FILE);
 
 const __main__ = async () => {
@@ -36,6 +39,7 @@ const __main__ = async () => {
         "compile",
         "--allow-env=" + env_list.join(","),
         "--deny-env=NODE_ENV",
+        "--allow-net=" + cfg.host + ":" + cfg.port,
         "--allow-read=.," + cfg.data_dir + "," + cfg.library_path,
         "--allow-write=" + cfg.data_dir,
         "--target",
@@ -44,9 +48,7 @@ const __main__ = async () => {
         build_target,
         SRC_ENTRY,
     ];
-    const cmd = new Deno.Command(DENO_EXEC, {
-        args,
-    });
+    const cmd = new Deno.Command(DENO_EXEC, { args });
     const proc = cmd.spawn();
     const { code } = await proc.output();
     console.assert(code === 0);
@@ -59,6 +61,21 @@ const __main__ = async () => {
     } catch {
         console.log();
         console.error("!! Failed to Cpoy:", config_file_path);
+        Deno.exit(-999);
+    }
+    // copy static folder
+    console.log("Copy Static Files:", STATIC_SOURCE_DIR);
+    try {
+        await Deno.remove(TARGET_STATIC_DIR, { recursive: true });
+    } catch {
+        // ignore file doesn't exist
+    }
+    try {
+        await Deno.mkdir(TARGET_STATIC_DIR, { recursive: true });
+        await copy(STATIC_SOURCE_DIR, TARGET_STATIC_DIR, { overwrite: true, preserveTimestamps: true });
+    } catch {
+        console.log();
+        console.error("!! Failed to Cpoy:", TARGET_STATIC_DIR);
         Deno.exit(-999);
     }
     console.log();
