@@ -1,10 +1,8 @@
 import { graphql } from "graphql";
-import { serveDir } from "@std/http";
 import { get_config, load_config } from "./global_cfg.ts";
 import { root, schema } from "./gql/schema.ts";
 import { generateSign } from "./utils/sign.ts";
-
-let server: Deno.HttpServer | null = null;
+import { serveDir } from "@std/http/file-server";
 
 interface RequestContent {
     requestId?: string;
@@ -149,7 +147,7 @@ const __main__ = async () => {
     // init config
     const cfg = await load_config();
     // start server
-    server = Deno.serve({ hostname: cfg.host, port: Number.parseInt(cfg.port) }, handler);
+    const server = Deno.serve({ hostname: cfg.host, port: Number.parseInt(cfg.port) }, handler);
 };
 
 // Learn more at https://deno.land/manual/examples/module_metadata#concepts

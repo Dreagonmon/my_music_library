@@ -78,9 +78,10 @@ const __main__ = async () => {
         console.error("!! Failed to Cpoy:", TARGET_STATIC_DIR);
         Deno.exit(-999);
     }
-    console.log();
 };
 
 if (import.meta.main) {
     await __main__();
+    console.log("Build Finished.");
+    console.log();
 }
