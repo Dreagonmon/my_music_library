@@ -1,12 +1,13 @@
 {
     "tasks": {
-        "dev": "deno run --allow-net --allow-env --allow-read --allow-write=data src/main.ts",
+        "dev": "deno run --watch --allow-net --allow-env --allow-read --allow-write=data src/main.ts",
         "build": "deno run --allow-run=deno --allow-env --allow-read=.,/usr/bin,/bin,$HOME/.deno/bin --allow-write=./build scripts/build.ts",
         "build-aarch64": "deno run --allow-run=deno --allow-env --allow-read=.,/usr/bin,/bin,$HOME/.deno/bin --allow-write=./build scripts/build.ts aarch64-unknown-linux-gnu",
         "build-windows": "deno run --allow-run=deno --allow-env --allow-read=.,/usr/bin,/bin,$HOME/.deno/bin --allow-write=./build scripts/build.ts x86_64-pc-windows-msvc",
         "run": "deno task build && cd build && ./my_music_library",
         "gql-schema": "deno run --deny-env=NODE_ENV scripts/gql_schema.ts",
-        "gql-dev": "deno run --allow-env --allow-read --allow-write=data scripts/gql_dev.ts"
+        "gql-dev": "deno run --allow-env --allow-read --allow-write=data scripts/gql_dev.ts",
+        "bundle-nanostores": "deno run --allow-read --allow-write=./static --allow-env --allow-net scripts/bundle_nanostores.ts ./static/js/libs/nanostores"
     },
     "fmt": {
         "useTabs": false,
@@ -24,6 +25,7 @@
         "exclude": ["src/testdata/**/*.ts"]
     },
     "imports": {
+        "@deno/emit": "jsr:@deno/emit@^0.40.1",
         "@std/encoding": "jsr:@std/encoding@^0.224.0",
         "@std/fs": "jsr:@std/fs@^0.224.0",
         "@std/http": "jsr:@std/http@^0.224.0",
@@ -31,7 +33,6 @@
         "graphql": "npm:graphql@^16.8.1"
     },
     "compilerOptions": {
-        "target": "esnext",
         "lib": ["dom", "dom.iterable", "dom.asynciterable", "deno.ns"]
     }
 }

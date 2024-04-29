@@ -1,7 +1,6 @@
 import { generateRandomTemplateTag, removeStyleHidden } from "./css_utils.js";
 
 const P = generateRandomTemplateTag();
-console.log(P`Hello ↦ Random World!`);
 
 const dialogVariableSheet = new CSSStyleSheet();
 dialogVariableSheet.replaceSync(P`
