@@ -17,6 +17,7 @@ Server
 - [x] Simple Token Authentication
 - [ ] Playlist Management
 - [ ] Per Music Meta Data Management
+- [ ] Dockerfile Buinding Script
 
 Client
 - [x] HTTP API Client
