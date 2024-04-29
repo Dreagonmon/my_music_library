@@ -39,35 +39,6 @@ body {
     align-items: center;
 }
 
-button {
-    padding: var(--component-text-padding);
-    border-width: 0;
-    border-radius: var(--border-radius);
-    font-size: var(--font-size-normal);
-    cursor: pointer;
-}
-
-textarea,
-input {
-    padding: calc(var(--component-text-padding) - var(--border-width));
-    border-color: var(--form-input-border-color);
-    border-radius: var(--border-radius);
-    border-width: var(--border-width);
-    border-style: solid;
-    font-size: var(--font-size-normal);
-}
-
-button:focus,
-input:focus {
-    outline: none;
-}
-
-textarea,
-pre,
-code {
-    font-family: monospace;
-}
-
 .flex-row {
     display: flex;
     align-items: center;
@@ -106,7 +77,31 @@ code {
     overflow-y: hidden;
 }
 
-button.primary {
+/* useful components */
+
+.button {
+    padding: var(--component-text-padding);
+    border-width: 0;
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-normal);
+    cursor: pointer;
+}
+
+.input {
+    padding: calc(var(--component-text-padding) - var(--border-width));
+    border-color: var(--form-input-border-color);
+    border-radius: var(--border-radius);
+    border-width: var(--border-width);
+    border-style: solid;
+    font-size: var(--font-size-normal);
+}
+
+.button.primary {
     background-color: var(--color-bg-primary);
     color: var(--color-fg-primary);
+}
+
+.button:focus,
+.input:focus {
+    outline: none;
 }
