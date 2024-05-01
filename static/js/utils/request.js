@@ -110,19 +110,38 @@ const getRandomContent = () => {
 };
 
 export class GraphQLSocket {
+    /** @type {number} */
+    #timeoutMs = 5000;
+    /** @type {number} */
+    #keepAliveTimeMs = 12_000;
+    /** @type {boolean} */
+    #isReady = false;
+    /** @type {Promise<void> | null} */
+    #waitOpenPromise = null;
+    /** @type {number} */
+    #nextRequestId = 0;
+    /** @type {WebSocket | null} */
+    #ws = null;
+    /** @type {Map<string, (resp: GraphQLResponse) => void} */
+    #waitingMap = new Map();
+    /** @type {Map<string, (error: any) => void} */
+    #rejectMap = new Map();
     constructor() {
-        /** @type {Map<string, (resp: GraphQLResponse) => void} */
-        this.waitingMap = new Map();
-        /** @type {Map<string, (error: any) => void} */
-        this.rejectMap = new Map();
-        /** @type {number} */
-        this.nextRequestId = 0;
-        /** @type {boolean} */
-        this.isReady = false;
-        /** @type {WebSocket | null} */
-        this.ws = null;
-        /** @type {Promise<void> | null} */
-        this.waitOpenPromise = null;
+        /**
+         * Keep alive task
+         * @type {() => Promise<void>}
+         */
+        this.bindPingLoop = (async () => {
+            await (new Promise((res) => setTimeout(res, this.#keepAliveTimeMs))).catch(() => false);
+            if (this.#ws instanceof WebSocket) {
+                const isAlive = await (this.ping()).catch(() => false);
+                if (!isAlive) {
+                    this.#ws.close();
+                }
+            }
+            this.bindPingLoop(); // no await, stop increase the call stack.
+        }).bind(this);
+        this.bindPingLoop();
     }
 
     open() {
@@ -140,32 +159,26 @@ export class GraphQLSocket {
         url.searchParams.set("Content", content);
         url.searchParams.set("Sign", sign);
         /** @type {Promise<void>} */
-        this.waitOpenPromise = new Promise((rs) => {
-            this.ws = new WebSocket(url);
-            this.ws.binaryType = "arraybuffer";
-            this.ws.onopen = () => {
-                this.isReady = true;
+        this.#waitOpenPromise = new Promise((rs) => {
+            this.#ws = new WebSocket(url);
+            this.#ws.binaryType = "arraybuffer";
+            this.#ws.onopen = () => {
+                this.#isReady = true;
                 rs();
-                this.waitOpenPromise = null;
+                this.#waitOpenPromise = null;
             };
-            this.ws.onmessage = (e) => this.onResponMessage(e);
-            this.ws.onclose = () => {
+            this.#ws.onmessage = (e) => this.onResponMessage(e);
+            this.#ws.onclose = () => {
                 this.closeAll(null);
-                this.isReady = false;
-                this.ws = null;
+                this.#isReady = false;
+                this.#ws = null;
             };
-            this.ws.onerror = (e) => {
+            this.#ws.onerror = (e) => {
                 this.closeAll(e);
-                this.ws.close();
+                this.#ws.close();
             };
         });
-        return this.waitOpenPromise;
-    }
-
-    async waitOpen() {
-        if (this.waitOpenPromise != null) {
-            await this.waitOpenPromise;
-        }
+        return this.#waitOpenPromise;
     }
 
     /**
@@ -177,20 +190,26 @@ export class GraphQLSocket {
             /** @type {GraphQLResponse} */
             const resp = JSON.parse(data);
             const rid = resp.requestId || "";
-            if (this.waitingMap.has(rid)) {
-                this.waitingMap.get(rid)(resp);
-                this.waitingMap.delete(rid);
-                this.rejectMap.delete(rid);
+            if (this.#waitingMap.has(rid)) {
+                this.#waitingMap.get(rid)(resp);
+                this.#waitingMap.delete(rid);
+                this.#rejectMap.delete(rid);
             }
         }
     }
 
     closeAll(e) {
-        this.rejectMap.forEach((rj) => {
+        this.#rejectMap.forEach((rj) => {
             rj(e);
         });
-        this.rejectMap.clear();
-        this.waitingMap.clear();
+        this.#rejectMap.clear();
+        this.#waitingMap.clear();
+    }
+
+    setRequestTimeout(timeoutMs) {
+        if (typeof timeoutMs === "number" && timeoutMs > 0) {
+            this.#timeoutMs = timeoutMs;
+        }
     }
 
     /**
@@ -199,22 +218,30 @@ export class GraphQLSocket {
      * @returns {Promise<GraphQLResponse | undefined>}
      */
     async request(query, variables = {}) {
-        if (this.ws === null) {
-            await this.open();
+        if (!(this.#isReady)) {
+            if (this.#waitOpenPromise instanceof Promise) {
+                await this.#waitOpenPromise;
+            } else {
+                await this.open();
+            }
         }
-        const rid = this.nextRequestId.toString();
-        this.nextRequestId++;
+        const rid = this.#nextRequestId.toString();
+        this.#nextRequestId++;
         const requestBody = JSON.stringify({
             query,
             variables,
             requestId: rid,
         });
         const request = new Promise((rs, rj) => {
-            this.waitingMap.set(rid, rs);
-            this.rejectMap.set(rid, rj);
-            this.ws.send(requestBody);
+            if (this.#isReady) {
+                this.#waitingMap.set(rid, rs);
+                this.#rejectMap.set(rid, rj);
+                this.#ws.send(requestBody);
+            } else {
+                rj(null);
+            }
         });
-        const timeout = (new Promise((res) => setTimeout(res, 1000))).then(() => undefined);
+        const timeout = (new Promise((res) => setTimeout(res, this.#timeoutMs))).then(() => undefined);
         return await Promise.race([request, timeout]);
     }
 

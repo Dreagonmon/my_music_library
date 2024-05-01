@@ -3,12 +3,27 @@ import { GraphQLSocket } from "./utils/request.js";
 
 globalThis.addEventListener("load", async () => {
     installDialogs();
-    doWithLoadingDialog(async () => {
+    await doWithLoadingDialog(async () => {
         await new Promise((resolve) => setTimeout(resolve, 500));
-        showAlertDialog("Hello Dragon");
+        await showAlertDialog("Start AudioContext Test");
     });
     const s = new GraphQLSocket();
-    const resp = await s.ping();
-    console.log(resp);
+    {
+        const _task = async (i) => {
+            const alive = await s.ping();
+            if (!alive) {
+                console.log("not alive", i);
+            }
+        };
+        const pms = [];
+        const nums = 10000;
+        for (let i = 0; i < nums; i++) {
+            pms.push(_task(i));
+        }
+        const label = `${nums}条ping请求并发`;
+        console.time(label);
+        await Promise.all(pms);
+        console.timeEnd(label);
+    }
     window["ws"] = s;
 });
