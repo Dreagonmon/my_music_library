@@ -132,9 +132,14 @@ const handler: Deno.ServeHandler = async (req, _info) => {
     }
     // static server
     if (url.pathname.startsWith("/static")) {
+        const headers: Array<string> = [];
+        if (url.pathname.endsWith(".html")) {
+            headers.push("Permissions-Policy: autoplay=(self), fullscreen=(self)");
+        }
         return serveDir(req, {
             fsRoot: "./static",
             urlRoot: "static",
+            headers,
         });
     } else if (url.pathname === "/") {
         return new Response("", { status: 301, headers: { "Location": "/static/index.html" } });

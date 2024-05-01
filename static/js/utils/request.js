@@ -4,15 +4,6 @@ import jsSHA from "../libs/jsSHA/index.js";
 let token = "";
 let gqlEndpoint = "";
 let gqlWebSocketEndpoint = "";
-requestTokenAtom.subscribe((val) => {
-    token = val;
-});
-requestGraphQLEndpointAtom.subscribe((val) => {
-    gqlEndpoint = val;
-});
-requestGraphQLWebSocketEndpointAtom.subscribe((val) => {
-    gqlWebSocketEndpoint = val;
-});
 
 /**
  * @typedef GraphQLResponse
@@ -133,15 +124,22 @@ export class GraphQLSocket {
          */
         this.bindPingLoop = (async () => {
             await (new Promise((res) => setTimeout(res, this.#keepAliveTimeMs))).catch(() => false);
-            if (this.#ws instanceof WebSocket) {
+            if (this.#isReady) {
                 const isAlive = await (this.ping()).catch(() => false);
                 if (!isAlive) {
-                    this.#ws.close();
+                    this.close();
                 }
             }
             this.bindPingLoop(); // no await, stop increase the call stack.
         }).bind(this);
         this.bindPingLoop();
+    }
+
+    close() {
+        if (this.#ws instanceof WebSocket) {
+            this.#isReady = false;
+            this.#ws.close();
+        }
     }
 
     open() {
@@ -175,7 +173,7 @@ export class GraphQLSocket {
             };
             this.#ws.onerror = (e) => {
                 this.closeAll(e);
-                this.#ws.close();
+                this.close();
             };
         });
         return this.#waitOpenPromise;
@@ -251,3 +249,19 @@ export class GraphQLSocket {
         return resp && resp.data && resp.data.ping === "pong";
     }
 }
+
+export const gqlSocket = new GraphQLSocket();
+
+// store events
+requestTokenAtom.subscribe((val) => {
+    token = val;
+});
+requestGraphQLEndpointAtom.subscribe((val) => {
+    gqlEndpoint = val;
+});
+requestGraphQLWebSocketEndpointAtom.subscribe((val) => {
+    gqlWebSocketEndpoint = val;
+    if (gqlSocket instanceof GraphQLSocket) {
+        gqlSocket.close();
+    }
+});
